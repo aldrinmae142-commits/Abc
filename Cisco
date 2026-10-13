@@ -1,0 +1,207 @@
+// ==========================================
+// REGEX CONSTANTS
+// ==========================================
+const studentNumRegex = /^\d{2}-\d{4}-\d{3}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const validWorkshops = ["Web Development", "UI/UX Design", "Cybersecurity"];
+
+
+// ==========================================
+// PART B - REQUIRED PURE VALIDATION FUNCTION
+// ==========================================
+function validateStudentInfo(name, studentNumber, email) {
+  if (typeof name !== 'string' || typeof studentNumber !== 'string' || typeof email !== 'string') {
+    return false;
+  }
+  const trimmed = name.trim();
+  return trimmed.length >= 3 && !/\d/.test(trimmed) && studentNumRegex.test(studentNumber) && emailRegex.test(email);
+}
+
+
+// ==========================================
+// PART C - REQUIRED PURE FEE FUNCTION
+// ==========================================
+function calculateFinalFee(workshop, studentType) {
+  const fees = { 
+    "Web Development": 500, 
+    "UI/UX Design": 400, 
+    "Cybersecurity": 600 
+  };
+  const base = fees[workshop] || 0;
+  return base * (studentType === "Scholar" ? 0.8 : 1);
+}
+
+
+// ==========================================
+// BROWSER DOM EXECUTION
+// ==========================================
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // Helper for quick element selection
+    const $ = id => document.getElementById(id);
+
+
+    // ------------------------------------------
+    // PART A - DOM SELECTION
+    // ------------------------------------------
+    const form = $('registrationForm');
+    
+    // Inputs
+    const nameInput = $('studentName');
+    const numInput = $('studentNumber');
+    const emailInput = $('email');
+    const shopSelect = $('workshop');
+    const regRadio = $('studentTypeRegular');
+    const scholarRadio = $('studentTypeScholar');
+    const terms = $('terms');
+
+    // Error Display Containers
+    const errName = $('nameError');
+    const errNum = $('studentNumberError');
+    const errEmail = $('emailError');
+    const errShop = $('workshopError');
+    const errTerms = $('termsError');
+
+    // Fee Display Containers
+    const regFeeDisp = $('registrationFee');
+    const discDisp = $('discount');
+    const finalFeeDisp = $('finalFee');
+
+    // Actions & Result Container
+    const clearBtn = $('clearBtn');
+    const resultBox = $('registrationResult');
+
+    // Summary Elements
+    const sumName = $('summaryName');
+    const sumNum = $('summaryStudentNumber');
+    const sumEmail = $('summaryEmail');
+    const sumShop = $('summaryWorkshop');
+    const sumType = $('summaryStudentType');
+    const sumFee = $('summaryFee');
+    const sumDisc = $('summaryDiscount');
+    const sumFinal = $('summaryFinalFee');
+
+
+    // ------------------------------------------
+    // HELPER FUNCTIONS
+    // ------------------------------------------
+    const getType = () => {
+      if (scholarRadio?.checked) return "Scholar";
+      if (regRadio?.checked) return "Regular";
+      return null;
+    };
+
+    const initDisplay = () => {
+      resultBox.style.display = 'none';
+      regFeeDisp.textContent = '₱0';
+      discDisp.textContent = '₱0';
+      finalFeeDisp.textContent = '₱0';
+    };
+
+    const clearErrors = () => {
+      errName.textContent = '';
+      errNum.textContent = '';
+      errEmail.textContent = '';
+      errShop.textContent = '';
+      errTerms.textContent = '';
+    };
+
+
+    // ------------------------------------------
+    // PART A - INITIAL STATE
+    // ------------------------------------------
+    initDisplay();
+
+
+    // ------------------------------------------
+    // PART D - DYNAMIC FEE DISPLAY
+    // ------------------------------------------
+    const updateFeeDisplay = () => {
+      const type = getType();
+      const base = calculateFinalFee(shopSelect.value, "Regular");
+      const final = calculateFinalFee(shopSelect.value, type);
+      const disc = base - final;
+
+      regFeeDisp.textContent = `₱${base}`;
+      discDisp.textContent = `₱${disc}`;
+      finalFeeDisp.textContent = `₱${final}`;
+    };
+
+    shopSelect.addEventListener('change', updateFeeDisplay);
+    if (regRadio) regRadio.addEventListener('change', updateFeeDisplay);
+    if (scholarRadio) scholarRadio.addEventListener('change', updateFeeDisplay);
+
+
+    // ------------------------------------------
+    // PART E & PART F - FORM VALIDATION & SUMMARY
+    // ------------------------------------------
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const nameVal = nameInput.value;
+      const numVal = numInput.value;
+      const emailVal = emailInput.value;
+      const shopVal = shopSelect.value;
+      const typeVal = getType();
+
+      let isValid = true;
+
+      if (nameVal.trim().length < 3 || /\d/.test(nameVal.trim())) {
+        errName.textContent = "Enter a valid student name.";
+        isValid = false;
+      }
+
+      if (!studentNumRegex.test(numVal)) {
+        errNum.textContent = "Enter a valid student number.";
+        isValid = false;
+      }
+
+      if (!emailRegex.test(emailVal)) {
+        errEmail.textContent = "Enter a valid email address.";
+        isValid = false;
+      }
+
+      if (!validWorkshops.includes(shopVal)) {
+        errShop.textContent = "Please select a workshop.";
+        isValid = false;
+      }
+
+      if (!terms.checked) {
+        errTerms.textContent = "You must accept the Terms and Conditions.";
+        isValid = false;
+      }
+
+      if (!isValid) {
+        resultBox.style.display = 'none';
+        return;
+      }
+
+      const base = calculateFinalFee(shopVal, "Regular");
+      const final = calculateFinalFee(shopVal, typeVal);
+
+      sumName.textContent = nameVal.trim();
+      sumNum.textContent = numVal;
+      sumEmail.textContent = emailVal;
+      sumShop.textContent = shopVal;
+      sumType.textContent = typeVal === "Scholar" ? "Scholar" : "Regular Student";
+      sumFee.textContent = `₱${base}`;
+      sumDisc.textContent = `₱${base - final}`;
+      sumFinal.textContent = `₱${final}`;
+
+      resultBox.style.display = 'block';
+    });
+
+
+    // ------------------------------------------
+    // PART G - CLEAR BUTTON / COMPLETE RESET
+    // ------------------------------------------
+    clearBtn.addEventListener('click', () => {
+      form.reset();
+      clearErrors();
+      initDisplay();
+    });
+
+  });
+}
